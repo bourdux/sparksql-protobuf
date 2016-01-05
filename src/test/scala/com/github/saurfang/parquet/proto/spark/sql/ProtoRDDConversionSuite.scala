@@ -2,12 +2,16 @@ package com.github.saurfang.parquet.proto.spark.sql
 
 import com.github.saurfang.parquet.proto.AddressBook.Person
 import com.github.saurfang.parquet.proto.AddressBook.Person.PhoneNumber
+import com.github.saurfang.parquet.proto.PrimitiveInGroup.PrimitiveInGroupMessage
+import com.github.saurfang.parquet.proto.PrimitiveInGroup.PrimitiveInGroupMessage.Foo
 import com.github.saurfang.parquet.proto.Simple.SimpleMessage
 import com.google.protobuf.ByteString
 import org.apache.spark.{SparkConf, SparkContext, LocalSparkContext}
 import org.apache.spark.sql.{Row, SQLContext}
 import org.scalatest.{Matchers, FunSuite}
 import ProtoRDDConversions._
+
+import scala.collection.mutable.ArrayBuffer
 
 class ProtoRDDConversionSuite extends FunSuite with Matchers {
   test("convert protobuf with simple data type to dataframe") {
@@ -70,6 +74,16 @@ class ProtoRDDConversionSuite extends FunSuite with Matchers {
         .build
     val protoRow = messageToRow(protoMessage)
     protoRow shouldBe Row("test", 0, null, Seq(Row("12345", "MOBILE")), Seq("ABC", "CDE"))
+  }
+
+  test("convert protobuf with repeated primitives") {
+    val protoMessage =
+      PrimitiveInGroupMessage.newBuilder()
+    .setBar("test")
+    .setFoo(Foo.newBuilder().addRepeatedField(2).addRepeatedField(3))
+    .build
+    val protoRow = messageToRow(protoMessage)
+    protoRow shouldBe Row("test", Row(Seq(2, 3)))
   }
 
   test("convert protobuf with empty repeated fields") {

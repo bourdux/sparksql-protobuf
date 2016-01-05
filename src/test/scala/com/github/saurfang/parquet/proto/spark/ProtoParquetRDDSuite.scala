@@ -1,19 +1,20 @@
 package com.github.saurfang.parquet.proto.spark
 
 import com.github.saurfang.parquet.proto.AddressBook._
+import com.github.saurfang.parquet.proto.PrimitiveInGroup.PrimitiveInGroupMessage
+import com.github.saurfang.parquet.proto.PrimitiveInGroup.PrimitiveInGroupMessage.Foo
 import com.github.saurfang.parquet.proto.spark.sql.ProtoReflection
 import com.google.protobuf.AbstractMessage
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.types._
-import org.apache.spark.sql.{DataFrame, Row, SQLContext, SaveMode}
 import org.apache.spark._
+import org.apache.spark.sql.types._
+import org.apache.spark.sql.{Row, SQLContext, SaveMode}
 import org.scalatest._
 
 /**
- * We demonstrate that we have the ability to convert RDD[Protobuf] as dataframe.
- * We can also do the reverse: read parquet file back as RDD[Protobuf].
- */
-class ProtoParquetRDDSuite extends FunSuite with Matchers with SharedSparkContext with Logging{
+  * We demonstrate that we have the ability to convert RDD[Protobuf] as dataframe.
+  * We can also do the reverse: read parquet file back as RDD[Protobuf].
+  */
+class ProtoParquetRDDSuite extends FunSuite with Matchers with SharedSparkContext with Logging {
 
   // person specified as rows
   val personRows: Seq[Row] = Seq(
@@ -24,7 +25,7 @@ class ProtoParquetRDDSuite extends FunSuite with Matchers with SharedSparkContex
     )
   )
 
-  // person psecified as protobuf message
+  // person specified as protobuf message
   val personMessages: Seq[Person] = Seq(
     Person.newBuilder()
       .setEmail("alice@outlook.com")
@@ -48,6 +49,24 @@ class ProtoParquetRDDSuite extends FunSuite with Matchers with SharedSparkContex
           .setType(Person.PhoneType.MOBILE)
       )
       .build
+  )
+
+  // primitive un group specified as rows
+  val primitiveInGroupRows: Seq[Row] = Seq(
+    Row("test1", Row(Seq(1, 2))),
+    Row("test2", Row(Seq(3, 4)))
+  )
+
+  // primitive in group as protobuf message
+  val primitiveInGroupMessages: Seq[PrimitiveInGroupMessage] = Seq(
+    PrimitiveInGroupMessage.newBuilder()
+      .setBar("test1")
+      .setFoo(Foo.newBuilder().addRepeatedField(1).addRepeatedField(2))
+      .build(),
+    PrimitiveInGroupMessage.newBuilder()
+      .setBar("test2")
+      .setFoo(Foo.newBuilder().addRepeatedField(3).addRepeatedField(4))
+      .build()
   )
 
   test("read parquet data as protobuf objects") {
@@ -112,5 +131,24 @@ class ProtoParquetRDDSuite extends FunSuite with Matchers with SharedSparkContex
     )
 
     personsDF.collect().sortBy(_.getString(0)) shouldBe personsDF2.collect().sortBy(_.getString(0))
+  }
+
+  test("convert primitive repeated field to df using Class [_]") {
+    val sqlContext = new SQLContext(sc)
+
+    // create RDD[PrimitiveInGroupMessage] that contains primitve in group data
+    val protoPrimitiveInGroup = sc.parallelize(primitiveInGroupMessages)
+
+    // convert primitive in group message to DataFrame
+    import com.github.saurfang.parquet.proto.spark.sql._
+    val protoPrimitiveInGroupDF = sqlContext.createDataFrame(protoPrimitiveInGroup)
+    val protoPrimitiveInGroupDF2 = sqlContext.createDataFrameFromProto(
+      protoPrimitiveInGroup,
+      Class.forName("com.github.saurfang.parquet.proto.PrimitiveInGroup$PrimitiveInGroupMessage").asInstanceOf[Class[AbstractMessage]]
+    )
+
+    protoPrimitiveInGroupDF.collect().sortBy(_.getString(0)) shouldBe protoPrimitiveInGroupDF2.collect().sortBy(_.getString(0))
+
+
   }
 }

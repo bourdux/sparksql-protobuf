@@ -1,0 +1,10 @@
+package com.github.saurfang.parquet.proto;
+
+message PrimitiveInGroupMessage {
+    required string bar = 1;
+    optional Foo foo = 2;
+
+    message Foo {
+        repeated int32 repeated_field = 1;
+    }
+}

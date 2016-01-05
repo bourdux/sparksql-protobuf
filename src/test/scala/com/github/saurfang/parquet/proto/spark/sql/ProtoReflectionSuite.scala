@@ -1,10 +1,11 @@
 package com.github.saurfang.parquet.proto.spark.sql
 
 import com.github.saurfang.parquet.proto.AddressBook.Person
+import com.github.saurfang.parquet.proto.PrimitiveInGroup.PrimitiveInGroupMessage
 import com.github.saurfang.parquet.proto.Simple.SimpleMessage
+import com.github.saurfang.parquet.proto.spark.sql.ProtoReflection._
 import org.apache.spark.sql.types._
-import org.scalatest.{Matchers, FunSuite}
-import ProtoReflection._
+import org.scalatest.{FunSuite, Matchers}
 
 class ProtoReflectionSuite extends FunSuite with Matchers {
 
@@ -13,21 +14,21 @@ class ProtoReflectionSuite extends FunSuite with Matchers {
       Schema(
         StructType(
           Seq(
-            StructField("double",DoubleType),
-            StructField("float",FloatType),
-            StructField("int",IntegerType),
-            StructField("long",LongType),
-            StructField("uint",IntegerType),
-            StructField("ulong",LongType),
-            StructField("sint",IntegerType),
-            StructField("slong",LongType),
-            StructField("fint",IntegerType),
-            StructField("flong",LongType),
-            StructField("sfint",IntegerType),
-            StructField("sflong",LongType),
-            StructField("boolean",BooleanType),
-            StructField("String",StringType),
-            StructField("ByteString",BinaryType)
+            StructField("double", DoubleType),
+            StructField("float", FloatType),
+            StructField("int", IntegerType),
+            StructField("long", LongType),
+            StructField("uint", IntegerType),
+            StructField("ulong", LongType),
+            StructField("sint", IntegerType),
+            StructField("slong", LongType),
+            StructField("fint", IntegerType),
+            StructField("flong", LongType),
+            StructField("sfint", IntegerType),
+            StructField("sflong", LongType),
+            StructField("boolean", BooleanType),
+            StructField("String", StringType),
+            StructField("ByteString", BinaryType)
           )
         ),
         nullable = true
@@ -58,6 +59,23 @@ class ProtoReflectionSuite extends FunSuite with Matchers {
           )
         ),
         nullable = true
+      )
+  }
+
+  test("ProtoReflection should derive primitve repetae type in group") {
+    schemaFor[PrimitiveInGroupMessage] shouldBe
+      Schema(
+        StructType(
+          Seq(
+            StructField("bar", StringType, nullable = false),
+            StructField("foo",
+              StructType(
+                Seq(
+                  StructField("repeated_field", ArrayType(IntegerType, containsNull = false), nullable = false)
+                )
+              )
+              , nullable = true))
+        ), nullable = true
       )
   }
 

@@ -140,7 +140,8 @@ class ProtoLISTMessageConverter extends GroupConverter {
     private Converter newScalarConverter(ParentValueContainer pvc, Message.Builder parentBuilder, Descriptors.FieldDescriptor fieldDescriptor, Type parquetType) {
         if (fieldDescriptor.isRepeated()
                 && !parquetType.isRepetition(Type.Repetition.REPEATED)
-                && parquetType.getName().equals(fieldDescriptor.getName())) {
+                && parquetType.getName().equals(fieldDescriptor.getName())
+                && !parquetType.isPrimitive()) {
             return new ProtoListConverter(pvc, parentBuilder, fieldDescriptor, parquetType.asGroupType());
         }
 
